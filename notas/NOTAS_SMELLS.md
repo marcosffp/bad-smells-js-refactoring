@@ -18,7 +18,7 @@ Números de linha referem-se ao arquivo no commit `1de9305`.
 - **Técnica:** **Extract Method** (`buildHeader`, `buildRow`, `buildFooter`); alternativa: Replace Method with Method Object.
 
 ## Smell 2 — Switch Statements / condicionais complexas e aninhadas
-- **Localização:** laço das linhas 27–55 (até 4 níveis: `for` → `if role` → `if value` → `if reportType`); a mesma cadeia `if (reportType === 'CSV') … else if (reportType === 'HTML')` aparece 3 vezes (16–24, 35–42/46–52, 58–65).
+- **Localização:** laço das linhas 27–55 (até 4 níveis: `for` → `if role` → `if value` → `if reportType`); a mesma cadeia `if (reportType === 'CSV') … else if (reportType === 'HTML')` aparece 4 vezes: cabeçalho (16–24), corpo (35–42 e 46–52, uma por perfil) e rodapé (58–65).
 - **Manutenção:** para adicionar um formato (ex.: JSON) é preciso editar o cabeçalho, as duas ramificações do corpo e o rodapé (cirurgia em vários pontos). Um tipo ou perfil desconhecido é ignorado em silêncio.
 - **Testes:** o número de caminhos cresce com a combinação formato × perfil × faixa de valor; cobrir todos exige muitos casos.
 - **Relação com duplicação:** o problema do switch é semelhante ao código duplicado — a mesma estrutura condicional repetida em vários pontos (aqui, a cadeia por `reportType`).
@@ -102,7 +102,7 @@ Arquivos: `src/ReportGenerator.refactored.js` e `tests/ReportGenerator.refactore
 | `f419227` | constantes `PRIORITY_THRESHOLD`, `USER_MAX_VALUE`, `ROLE`, `REPORT_TYPE` | Replace Magic Number with Symbolic Constant | Números mágicos | 10/10 |
 | `0a12208` | funções `buildHeader`, `buildRow`, `buildFooter` | Extract Method | Long Method, duplicação | 10/10 |
 | `7db0956` | funções `markPriority`, `canSee`, `isHighlighted` | Decompose Conditional | Condicionais aninhadas | 10/10 |
-| `a0c0f9c` | `CsvFormatter`, `HtmlFormatter`, `EmptyFormatter` + `Map` | Replace Conditional with Polymorphism | Switch Statements (cadeia por `reportType` repetida 3×) | 10/10 |
+| `a0c0f9c` | `CsvFormatter`, `HtmlFormatter`, `EmptyFormatter` + `Map` | Replace Conditional with Polymorphism | Switch Statements (cadeia por `reportType` repetida 4×) | 10/10 |
 
 Todos os helpers são funções internas do módulo; a classe exportada mantém só `constructor` e `generateReport` (mesma API do original).
 
