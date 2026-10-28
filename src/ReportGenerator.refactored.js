@@ -3,11 +3,22 @@ const USER_MAX_VALUE = 500;
 const ROLE = { ADMIN: 'ADMIN', USER: 'USER' };
 const REPORT_TYPE = { CSV: 'CSV', HTML: 'HTML' };
 
-function buildHeader(reportType, user) {
-  if (reportType === REPORT_TYPE.CSV) {
+class CsvFormatter {
+  header() {
     return 'ID,NOME,VALOR,USUARIO\n';
   }
-  if (reportType === REPORT_TYPE.HTML) {
+
+  row(item, user) {
+    return `${item.id},${item.name},${item.value},${user.name}\n`;
+  }
+
+  footer(total) {
+    return `\nTotal,,\n${total},,\n`;
+  }
+}
+
+class HtmlFormatter {
+  header(user) {
     return (
       '<html><body>\n' +
       '<h1>Relatório</h1>\n' +
@@ -16,29 +27,37 @@ function buildHeader(reportType, user) {
       '<tr><th>ID</th><th>Nome</th><th>Valor</th></tr>\n'
     );
   }
-  return '';
-}
 
-function buildRow(reportType, user, item, highlighted) {
-  if (reportType === REPORT_TYPE.CSV) {
-    return `${item.id},${item.name},${item.value},${user.name}\n`;
-  }
-  if (reportType === REPORT_TYPE.HTML) {
+  row(item, user, highlighted) {
     const style = highlighted ? ' style="font-weight:bold;"' : '';
     return `<tr${style}><td>${item.id}</td><td>${item.name}</td><td>${item.value}</td></tr>\n`;
   }
-  return '';
-}
 
-function buildFooter(reportType, total) {
-  if (reportType === REPORT_TYPE.CSV) {
-    return `\nTotal,,\n${total},,\n`;
-  }
-  if (reportType === REPORT_TYPE.HTML) {
+  footer(total) {
     return `</table>\n<h3>Total: ${total}</h3>\n</body></html>\n`;
   }
-  return '';
 }
+
+// Tipo de relatório desconhecido: não produz nada (mesmo comportamento original).
+class EmptyFormatter {
+  header() {
+    return '';
+  }
+
+  row() {
+    return '';
+  }
+
+  footer() {
+    return '';
+  }
+}
+
+const FORMATTERS = new Map([
+  [REPORT_TYPE.CSV, new CsvFormatter()],
+  [REPORT_TYPE.HTML, new HtmlFormatter()],
+]);
+const EMPTY_FORMATTER = new EmptyFormatter();
 
 // Admins têm itens acima do limite marcados como prioritários.
 function markPriority(user, item) {
@@ -68,21 +87,22 @@ export class ReportGenerator {
    * - Users comuns só veem itens com valor <= 500.
    */
   generateReport(reportType, user, items) {
-    let report = buildHeader(reportType, user);
+    const formatter = FORMATTERS.get(reportType) ?? EMPTY_FORMATTER;
+    let report = formatter.header(user);
     let total = 0;
 
     for (const item of items) {
       markPriority(user, item);
       if (!canSee(user, item)) continue;
 
-      const row = buildRow(reportType, user, item, isHighlighted(user, item));
+      const row = formatter.row(item, user, isHighlighted(user, item));
       if (row !== '') {
         report += row;
         total += item.value;
       }
     }
 
-    report += buildFooter(reportType, total);
+    report += formatter.footer(total);
 
     return report.trim();
   }
