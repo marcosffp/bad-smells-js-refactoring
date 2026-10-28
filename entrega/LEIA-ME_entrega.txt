@@ -1,0 +1,2 @@
+Repositorio (fork): https://github.com/marcosffp/bad-smells-js-refactoring
+Relatorio: Relatorio_Bad_Smells.pdf
