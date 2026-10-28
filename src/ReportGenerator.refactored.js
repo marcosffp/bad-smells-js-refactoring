@@ -40,6 +40,23 @@ function buildFooter(reportType, total) {
   return '';
 }
 
+// Admins têm itens acima do limite marcados como prioritários.
+function markPriority(user, item) {
+  if (user.role === ROLE.ADMIN && item.value > PRIORITY_THRESHOLD) {
+    item.priority = true;
+  }
+}
+
+function isHighlighted(user, item) {
+  return user.role === ROLE.ADMIN && Boolean(item.priority);
+}
+
+function canSee(user, item) {
+  if (user.role === ROLE.ADMIN) return true;
+  if (user.role === ROLE.USER) return item.value <= USER_MAX_VALUE;
+  return false;
+}
+
 export class ReportGenerator {
   constructor(database) {
     this.db = database;
@@ -55,24 +72,13 @@ export class ReportGenerator {
     let total = 0;
 
     for (const item of items) {
-      if (user.role === ROLE.ADMIN) {
-        if (item.value > PRIORITY_THRESHOLD) {
-          item.priority = true;
-        }
+      markPriority(user, item);
+      if (!canSee(user, item)) continue;
 
-        const row = buildRow(reportType, user, item, Boolean(item.priority));
-        if (row !== '') {
-          report += row;
-          total += item.value;
-        }
-      } else if (user.role === ROLE.USER) {
-        if (item.value <= USER_MAX_VALUE) {
-          const row = buildRow(reportType, user, item, false);
-          if (row !== '') {
-            report += row;
-            total += item.value;
-          }
-        }
+      const row = buildRow(reportType, user, item, isHighlighted(user, item));
+      if (row !== '') {
+        report += row;
+        total += item.value;
       }
     }
 
